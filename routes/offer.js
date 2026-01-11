@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const Product = require('../models/Product');
+const Offer = require('../models/Offer');
 
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find().populate('owner', 'name surname').populate('buyer', 'name surname');
-        res.status(200).json({ success: true, data: products });
+        const offers = await Offer.find().populate('owner', 'name surname').populate('buyer', 'name surname');
+        res.status(200).json({ success: true, data: offers });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
@@ -28,10 +28,10 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Aucun utilisateur trouvé' });
         }
 
-        const newProduct = new Product({ title, description, category, owner: decoded.userId });
-        await newProduct.save();
+        const newOfffer = new Offfer({ title, description, category, owner: decoded.userId });
+        await newOfffer.save();
 
-        res.status(201).json({ success: true, data: newProduct });
+        res.status(201).json({ success: true, data: newOfffer });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
