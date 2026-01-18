@@ -14,9 +14,9 @@ router.post('/login', async (req, res) => {
     }
 
     // Générer les tokens JWT
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ userId: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
-    res.status(200).json({ token, refreshToken, userId: user._id });
+    res.status(200).json({ accessToken, refreshToken, userId: user._id });
 });
 
 
@@ -56,7 +56,7 @@ router.get('/refresh-token', async (req, res) => {
     try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token: newToken });
+        res.status(200).json({ accessToken: newToken });
     } catch (error) {
         return res.status(401).json({ message: 'Invalid refresh token' });
     }

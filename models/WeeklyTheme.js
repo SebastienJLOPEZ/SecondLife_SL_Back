@@ -12,3 +12,5 @@ const weeklyThemeSchema = new mongoose.Schema({
         }]
     }]
 });
+
+module.exports = mongoose.model('WeeklyTheme', weeklyThemeSchema, `${process.env.WEEKLYTHEME}`);
