@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Connexion Admin - Backend</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+            .login-container {
+                background-color: white;
+                padding: 40px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                width: 400px;
+            }
+            h2 {
+                text-align: center;
+                margin-bottom: 30px;
+                color: #333;
+            }
+            .error-message {
+                background-color: #ffebee;
+                color: #c62828;
+                padding: 10px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                display: none;
+            }
+            label {
+                display: block;
+                margin-bottom: 8px;
+                color: #555;
+                font-weight: bold;
+            }
+            input {
+                width: 100%;
+                padding: 12px;
+                margin-bottom: 20px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+            }
+            input:focus {
+                outline: none;
+                border-color: #808000;
+            }
+            button {
+                width: 100%;
+                padding: 12px;
+                background-color: #808000;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 16px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+            button:hover {
+                background-color: #6b6b00;
+            }
+            button:disabled {
+                background-color: #ccc;
+                cursor: not-allowed;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-container">
+            <h2>Connexion Administrateur</h2>
+            <div id="errorMessage" class="error-message"></div>
+            <form id="loginForm">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required autocomplete="email">
+
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+
+                <button type="submit" id="submitBtn">Se connecter</button>
+            </form>
+        </div>
+
+        <script>
+            const form = document.getElementById('loginForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = document.getElementById('submitBtn');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                // Désactiver le bouton pendant la requête
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Connexion en cours...';
+                errorMessage.style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.accessToken) {
+                        // Stocker le token dans le localStorage
+                        localStorage.setItem('accessToken', data.accessToken);
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                        
+                        // Rediriger vers la page d'ajout d'article avec le token dans l'URL
+                        window.location.href = `/post-article?token=${data.accessToken}`;
+                    } else {
+                        // Afficher le message d'erreur
+                        errorMessage.textContent = data.message || 'Erreur de connexion. Veuillez réessayer.';
+                        errorMessage.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Se connecter';
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la connexion:', error);
+                    errorMessage.textContent = 'Erreur de connexion. Veuillez vérifier votre connexion internet.';
+                    errorMessage.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Se connecter';
+                }
+            });
+        </script>
+    </body>
+</html>

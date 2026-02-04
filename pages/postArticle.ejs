@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Page Backend pour les articles du site</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+            header {
+                background-color: #808000;
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .logout-btn {
+                background-color: #fff;
+                color: #808000;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            .logout-btn:hover {
+                background-color: #f0f0f0;
+            }
+            section {
+                background-color: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            form {
+                margin-bottom: 20px;
+            }
+            label {
+                display: block;
+                margin-top: 10px;
+                font-weight: bold;
+            }
+            input, select, textarea {
+                width: 100%;
+                padding: 8px;
+                margin-top: 5px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+            }
+            button[type="submit"] {
+                margin-top: 20px;
+                padding: 12px 24px;
+                background-color: #808000;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            button[type="submit"]:hover {
+                background-color: #6b6b00;
+            }
+            .content-section {
+                display: none;
+                margin-top: 10px;
+            }
+            .content-section.active {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Administration - Gestion des articles</h1>
+            <button class="logout-btn" onclick="logout()">Déconnexion</button>
+        </header>
+        <section>
+            <h2>Ajouter un nouvel article</h2>
+            <form action="/api/article/add" method="POST">
+                <label for="title">Titre:</label>
+                <input type="text" id="title" name="title" required>
+
+                
+                <label for="description">Catégorie:</label>
+                <select id="category" name="category" required>
+                    <option value="conseil">Conseil</option>
+                    <option value="annonce">Annonce</option>
+                    <option value="autre">Autre</option>
+
+                </select>
+                <label for="type">Type:</label>
+                <input type="radio" name="type" id="news" value="news" onchange="handleTypeChange(event)"> News
+                <input type="radio" name="type" id="blog" value="blog" onchange="handleTypeChange(event)"> Blog
+                <input type="radio" name="type" id="video" value="video" onchange="handleTypeChange(event)"> Vidéo
+
+            <!-- Section Blog/News -->
+            <div id="blogNewsSection" class="content-section">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description"></textarea>
+                <label for="content">Contenu:</label>
+                <textarea id="content" name="content" rows="15" cols="80"></textarea>
+            </div>
+
+            <!-- Section Vidéo -->
+            <div id="videoSection" class="content-section">
+                <label for="video">URL Vidéo:</label>
+                <input type="text" id="video" name="video">
+            </div>
+
+                <button type="submit">Ajouter l'article</button>
+            </form>
+        </section>
+        <script>
+            function logout() {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+            }
+
+            function showContentSection(type) {
+                document.getElementById('blogNewsSection').classList.remove('active');
+                document.getElementById('videoSection').classList.remove('active');
+
+                if (type === 'news' || type === 'blog') {
+                    document.getElementById('blogNewsSection').classList.add('active');
+                    document.getElementById('description').required = true;
+                    document.getElementById('content').required = true;
+                    document.getElementById('video').required = false;
+                } else if (type === 'video') {
+                    document.getElementById('videoSection').classList.add('active');
+                    document.getElementById('description').required = false;
+                    document.getElementById('content').required = false;
+                    document.getElementById('video').required = true;
+                }
+            }
+
+            function handleTypeChange(event) {
+                const type = event.target.value;
+                showContentSection(type);
+            }
+
+            // Envoyer le token avec le formulaire
+            const form = document.querySelector('form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const accessToken = localStorage.getItem('accessToken');
+                if (!accessToken) {
+                    alert('Session expirée. Veuillez vous reconnecter.');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch('/api/article/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('Article ajouté avec succès !');
+                        form.reset();
+                        document.querySelectorAll('.content-section').forEach(section => {
+                            section.classList.remove('active');
+                        });
+                    } else {
+                        alert('Erreur : ' + (result.message || 'Impossible d\'ajouter l\'article'));
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    alert('Erreur lors de l\'ajout de l\'article');
+                }
+            });
+        </script>
+    </body>
+</html>
