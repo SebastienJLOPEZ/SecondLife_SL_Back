@@ -10,7 +10,7 @@ const threadSchema = new mongoose.Schema({
     messages: [{
         sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         content: { type: String, required: true },
-        citation: {Boolean, default: false},
+        citation: { type: Boolean, default: false },
         citedMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
         timestamp: { type: Date, default: Date.now }
     }],
