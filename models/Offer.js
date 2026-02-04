@@ -9,7 +9,7 @@ const offerSchema = new mongoose.Schema({
     images: [{ type: String }],
     category: {
         type: String,
-        enum: ['category1', 'category2', 'category3'], //will be changed using a json of themes
+        enum: ['electronique', 'mobilier', 'vêtements', 'livres', 'autres'], //will be changed using a json of themes
         required: true
     },
     type: {
@@ -18,7 +18,7 @@ const offerSchema = new mongoose.Schema({
         required: true
     },
     demand: { type: String },
-    price: { type: Number, default: 0 },
+    price: { type: Number},
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     buyer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     status: {
@@ -31,4 +31,4 @@ const offerSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Offer', productSchema, `${process.env.OFFER}`);
+module.exports = mongoose.model('Offer', offerSchema, `${process.env.OFFER}`);
