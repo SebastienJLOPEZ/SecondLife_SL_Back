@@ -1,13 +1,16 @@
+require('dotenv').config();
 
+const mongoose = require('mongoose');
 
 const articleSchema = new mongoose.Schema({
     title: { type: String, required: true },
-    description: { type: String, required: true },
-    content : { type: String, required: true },
+    description: { type: String },
+    content : { type: String },
     images: [{ type: String }],
+    video: { type: String },
     category: {
         type: String,
-        enum: ['category1', 'category2', 'category3'], //will be changed using a json of themes
+        enum: ['conseil', 'annonce', 'autre'], //will be changed using a json of themes
         required: true
     },
     type: {
