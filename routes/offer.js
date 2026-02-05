@@ -20,7 +20,7 @@ router.post('/add', async (req, res) => {
         return res.status(401).json({ message: 'No token provided' });
     }
 
-    const { title, description, category, type, demand, price } = req.body;
+    const { title, description, category, type, demand, price, address } = req.body;
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -40,6 +40,14 @@ router.post('/add', async (req, res) => {
             newOffer.demand = demand;
         } else {
             newOffer.type = 'don';
+        }
+
+        if (address) {
+            newOffer.address = {
+                region: address.region,
+                department: address.department,
+                city: address.city,
+            };
         }
 
         await newOffer.save();
@@ -150,6 +158,102 @@ router.get('/search', async (req, res) => {
     }
 });
 
+router.get('/my-offers', async (req, res) => {
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    if (!accessToken) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+    try {
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+
+        console.log(userId)
+
+        const offersOwner = await Offer.find({ owner: userId }).populate('buyer', 'name surname');
+        console.log(offersOwner);
+        const offersBuyer = await Offer.find({ buyer: userId }).populate('owner', 'name surname');
+        console.log(offersBuyer);
+
+        res.status(200).json({ success: true, data: {
+            owned: offersOwner,
+            bought: offersBuyer,
+            hasBrought: true
+        } } );
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Token expired'
+            });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token'
+            });
+        }
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+router.put('/:id/note', async (req, res) => {
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    if (!accessToken) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+        const { rating } = req.body;
+
+        let noteIndex;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+        }
+
+        const offer = await Offer.findById(req.params.id);
+
+        if (!offer) {
+            return res.status(404).json({ success: false, message: 'Offer not found' });
+        }
+
+        if (!offer.note) {
+            offer.note = [];
+        }
+
+        if (offer.owner.toString() === userId) {
+            noteIndex = 0;
+        } else if (offer.buyer && offer.buyer.toString() === userId) {
+            noteIndex = 1;
+        } else {
+            return res.status(403).json({ success: false, message: 'Unauthorized to rate this offer' });
+        }
+
+        // Mettre à jour la note à l'index approprié
+        offer.note[noteIndex] = rating;
+        offer.updatedAt= Date.now();
+        await offer.save();
+        res.status(200).json({ success: true, data: offer, message: 'Note mise à jour avec succès' });
+    } catch (error) {
+        console.error('[Offer Note] Erreur:', error);
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Token expired'
+            });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token'
+            });
+        }
+        res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         const offer = await Offer.findById(req.params.id)
@@ -202,6 +306,8 @@ router.put('/:id/direct-response', async (req, res) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
+
+
 
 // TODO:
 // Route affichant tous les produits possédés
