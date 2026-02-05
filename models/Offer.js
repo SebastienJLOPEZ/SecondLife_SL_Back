@@ -21,6 +21,11 @@ const offerSchema = new mongoose.Schema({
     price: { type: Number},
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     buyer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    address: {
+        region: { type: String },
+        department: { type: String },
+        city: { type: String },
+    },
     status: {
         type: String,
         enum: ['listed', 'exchanged', 'removed'],
