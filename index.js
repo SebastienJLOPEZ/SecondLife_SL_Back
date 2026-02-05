@@ -1,20 +1,29 @@
 require('dotenv').config();
 
-const mongoose = require('mongoose');
-const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
+const express = require('express');
+const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
+const offerRoutes = require('./routes/offer');
+const threadRoutes = require('./routes/thread');
+const articleRoutes = require('./routes/article');
+const negociationRoutes = require('./routes/negociation');
 const weeklyThemeRoutes = require('./models/WeeklyTheme');
 const { generateWeeklyTheme } = require('./bot/weeklytheme');
-const articleRoutes = require('./routes/article');
 const { verifyToken, verifyAdmin } = require('./middleware/auth');
-const threadRoutes = require('./routes/thread');
-const offerRoutes = require('./routes/offer');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.use(cors());
+
+// Configuration CORS pour supporter SSE
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 
 // Configuration EJS
 app.set('view engine', 'ejs');
@@ -41,8 +50,12 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/weeklytheme', weeklyThemeRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/offer', offerRoutes);
+app.use('/api/thread', threadRoutes);
 app.use('/api/article', articleRoutes);
+app.use('/api/negociation', negociationRoutes);
+app.use('/api/weeklytheme', weeklyThemeRoutes);
 
 app.get('/post-article', verifyToken, verifyAdmin, (req, res) => {
     try {
@@ -61,8 +74,7 @@ app.get('/login', (req, res) => {
         res.status(500).send('Erreur serveur');
     }
 });
-app.use('/api/thread', threadRoutes);
-app.use('/api/offer', offerRoutes);
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${process.env.PUBLIC_BACKEND_PATH}`);
