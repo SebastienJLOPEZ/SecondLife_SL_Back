@@ -80,7 +80,7 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${process.env.PUBLIC_BACKEND_PATH}`);
 });
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('* * * * 1', async () => {
     try {
         const response = await fetch(`${process.env.PUBLIC_BACKEND_PATH}/api/weeklytheme/month`);
         const data = await response.json();
