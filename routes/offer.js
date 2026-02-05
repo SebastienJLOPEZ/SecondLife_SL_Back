@@ -14,13 +14,13 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/add', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ message: 'No token provided' });
     }
 
-    const { title, description, category} = req.body;
+    const { title, description, category, type, demand, price } = req.body;
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -30,10 +30,21 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Aucun utilisateur trouvé' });
         }
 
-        const newOfffer = new Offfer({ title, description, category, owner: decoded.userId });
-        await newOfffer.save();
+        const newOffer = new Offer({ title, description, category, owner: decoded.userId });
 
-        res.status(201).json({ success: true, data: newOfffer });
+        if (type === 'vente' && price) {
+            newOffer.type = 'vente';
+            newOffer.price = price;
+        } else if (type === 'troc' && demand) {
+            newOffer.type = 'troc';
+            newOffer.demand = demand;
+        } else {
+            newOffer.type = 'don';
+        }
+
+        await newOffer.save();
+
+        res.status(201).json({ success: true, data: newOffer });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
@@ -50,7 +61,6 @@ router.get('/list', async (req, res) => {
 
         if (!!accessToken) {
             const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-            console.log('Decoded Token:', decoded);
             query.owner = { $ne: decoded.userId };
         }
 
@@ -106,7 +116,6 @@ router.get('/search', async (req, res) => {
 
         if (!!accessToken) {
             const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-            console.log('Decoded Token:', decoded);
             query.owner = { $ne: decoded.userId };
         }
 
@@ -152,6 +161,44 @@ router.get('/:id', async (req, res) => {
 
         res.status(200).json({ success: true, data: offer });
     } catch (error) {
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+router.put('/:id/direct-response', async (req, res) => {
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    if (!accessToken) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+
+        const offer = await Offer.findById(req.params.id);
+        if (!offer) {
+            return res.status(404).json({ success: false, message: 'Offer not found' });
+        }
+
+        const newBuyer = userId;
+
+        offer.buyer = newBuyer;
+        offer.status = 'exchanged';
+        await offer.save();
+        res.status(200).json({ success: true, data: offer });
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Token expired'
+            });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token'
+            });
+        }
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 });

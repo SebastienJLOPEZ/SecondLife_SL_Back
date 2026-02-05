@@ -47,17 +47,28 @@ router.get('/refresh-token', async (req, res) => {
     // Récupérer le refresh token depuis les en-têtes Authorization
     const refreshToken = req.headers.authorization?.split(' ')[1];
 
+    console.log('[Auth Backend] Requête refresh-token reçue:', {
+        hasRefreshToken: !!refreshToken,
+        refreshTokenLength: refreshToken?.length
+    });
+
     // Dans le cas où il n'y a pas de refresh token
     if (!refreshToken) {
+        console.log('[Auth Backend] Pas de refresh token fourni');
         return res.status(400).json({ message: 'Refresh token is required' });
     }
 
     // Vérifier si le refreshToken est valide et générer un nouveau token si c'est le cas
     try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        console.log('[Auth Backend] Refresh token valide pour userId:', decoded.userId);
+        
         const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        console.log('[Auth Backend] Nouveau access token généré');
+        
         res.status(200).json({ accessToken: newToken });
     } catch (error) {
+        console.error('[Auth Backend] Erreur de vérification du refresh token:', error.message);
         return res.status(401).json({ message: 'Invalid refresh token' });
     }
 });

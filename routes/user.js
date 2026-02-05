@@ -4,14 +4,15 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 router.get('/profile', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    if (!accessToken) {
         return res.status(401).json({ message: 'No token provided' });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
         const user = await User.findById(decoded.userId).select('email name surname createdAt');
+        
         if (!user) {
             return res.status(404).json({
                 success: false,

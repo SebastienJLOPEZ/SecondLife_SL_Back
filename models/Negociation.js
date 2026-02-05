@@ -11,7 +11,8 @@ const negociationSchema = new mongoose.Schema({
             content: { type: String, required: true },
             timestamp: { type: Date, default: Date.now }
         }],
-    timestamp: { type: Date, default: Date.now } // La date du début de la conversation
+    createdAt: { type: Date, default: Date.now }, // La date du début de la conversation
+    updatedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Negociation', negociationSchema, `${process.env.NEGOCIATION}`);
