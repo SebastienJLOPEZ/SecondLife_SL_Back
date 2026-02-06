@@ -105,20 +105,27 @@ router.get('/list', async (req, res) => {
 
 router.get('/search', async (req, res) => {
     try {
-        const {page = 1, limit= 10, category, types} = req.query;
+        const {page = 1, limit= 10, category, types, address} = req.query;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const accessToken = req.headers.authorization?.split(' ')[1];
 
         const query = { status: 'listed' };
 
-        if (category) 
+        if (category)
             query.category = category;
 
         if (types) {
             const typesArray = types.split(',');
             query.type = { $in: typesArray };
         }
+
+        if (address.region)
+            query['address.region'] = address.region;
+        if (address.department)
+            query['address.department'] = address.department;
+        if (address.city)
+            query['address.city'] = address.city;
 
         console.log('Types:', query.types);
 
