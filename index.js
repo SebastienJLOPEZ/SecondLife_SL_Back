@@ -22,7 +22,9 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 
 // Configuration EJS
@@ -77,10 +79,10 @@ app.get('/login', (req, res) => {
 
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${process.env.PUBLIC_BACKEND_PATH}`);
+    console.log(`Server is running on port ${PORT}`);
 });
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 0 * * 1', async () => {
     try {
         const response = await fetch(`${process.env.PUBLIC_BACKEND_PATH}/api/weeklytheme/month`);
         const data = await response.json();
