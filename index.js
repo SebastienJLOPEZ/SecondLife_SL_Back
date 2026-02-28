@@ -2,8 +2,11 @@ require('dotenv').config();
 
 const cors = require('cors');
 const cron = require('node-cron');
+const helmet = require('helmet');
 const express = require('express');
 const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const offerRoutes = require('./routes/offer');
@@ -16,6 +19,29 @@ const { verifyToken, verifyAdmin } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Security middleware
+app.use(helmet()); // Set security HTTP headers
+
+// Rate limiting for auth routes to prevent brute force attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs for auth routes
+    message: { message: 'Too many attempts, please try again after 15 minutes' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General rate limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { message: 'Too many requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.use(generalLimiter);
 
 // Configuration CORS pour supporter SSE
 app.use(cors({
@@ -32,8 +58,9 @@ app.set('view engine', 'ejs');
 app.set('views', './pages');
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10kb' })); // Limit body size
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(mongoSanitize()); // Sanitize data against NoSQL injection
 
 app.use((req, res, next) => {
     // Permettre l'accès aux pages HTML avec le token dans le query string (pour la redirection depuis le login)
@@ -51,7 +78,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // Apply stricter rate limit on auth routes
 app.use('/api/user', userRoutes);
 app.use('/api/offer', offerRoutes);
 app.use('/api/thread', threadRoutes);
